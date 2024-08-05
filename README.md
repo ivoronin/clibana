@@ -19,12 +19,12 @@ Clibana is a command-line interface (CLI) tool for OpenSearch that offers Kibana
 ## Examples
 
 ```bash
-clibana -H https://logs.internal -i "k8s.containers.*" search -s now-2h -e now-1h "kubernetes.pod_name:*nginx*"
-clibana -H https://logs.internal -i "k8s.containers.*" mappings
-clibana -H https://logs.internal -i "k8s.containers.*" indices
+clibana -H https://logs.internal -i "pods-*" search -s now-2h -e now-1h "pod_name:*nginx*"
+clibana -H https://logs.internal -i "pods-*" mappings
+clibana -H https://logs.internal -i "pods-*" indices
 ```
 
-Most options can be set using environment variables. Check `clibana` -h for additional details.
+Most options can be set using environment variables. Check `clibana -h` for additional details.
 
 ### AWS Support
 
