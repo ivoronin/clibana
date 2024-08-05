@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/alexflint/go-arg"
@@ -48,6 +49,10 @@ func (ClibanaConfig) Description() string {
 
 func (ClibanaConfig) Epilogue() string {
 	return "For more information, see https://github.com/ivoronin/clibana"
+}
+
+func (ClibanaConfig) Version() string {
+	return fmt.Sprintf("clibana %s (commit: %s, build date: %s)", version, commit, date)
 }
 
 type fieldList []string

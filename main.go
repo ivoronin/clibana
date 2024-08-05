@@ -15,6 +15,12 @@ const (
 	SearchRequestSize = 10000
 )
 
+var (
+	version = ""
+	commit  = ""
+	date    = ""
+)
+
 var DebugLogger = log.New(io.Discard, "DEBUG: ", log.Ldate|log.Ltime|log.Lshortfile)
 
 func FatalError(err error) {
