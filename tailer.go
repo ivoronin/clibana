@@ -96,7 +96,7 @@ func (t *Tailer) buildSearchRequestBody() *strings.Reader {
 	}
 
 	if len(t.ClibanaConfig.Search.Fields) > 0 {
-		query["_source"] = append(t.ClibanaConfig.Search.Fields, "@timestamp")
+		query["_source"] = t.ClibanaConfig.Search.Fields
 	}
 
 	body, err := json.Marshal(query)
