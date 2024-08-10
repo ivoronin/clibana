@@ -96,7 +96,11 @@ func (t *Tailer) buildSearchRequestBody() *strings.Reader {
 	}
 
 	if len(t.ClibanaConfig.Search.Fields) > 0 {
-		query["_source"] = t.ClibanaConfig.Search.Fields
+		fieldNames := make([]string, 0, len(t.ClibanaConfig.Search.Fields))
+		for _, field := range t.ClibanaConfig.Search.Fields {
+			fieldNames = append(fieldNames, field.Name)
+		}
+		query["_source"] = fieldNames
 	}
 
 	body, err := json.Marshal(query)

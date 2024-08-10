@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/fatih/color"
 	"github.com/opensearch-project/opensearch-go/v2"
 )
 
@@ -18,8 +19,12 @@ func search(client *opensearch.Client, clibanaConfig ClibanaConfig) {
 			var values []string
 
 			for _, field := range clibanaConfig.Search.Fields {
-				if strValue, ok := getNestedField(hit.Source, field); ok {
-					values = append(values, strValue)
+				if value, ok := getNestedField(hit.Source, field.Name); ok {
+					if colorCode, ok := Colors[field.Color]; ok {
+						colorer := color.New(colorCode)
+						value = colorer.Sprint(value)
+					}
+					values = append(values, value)
 				}
 			}
 

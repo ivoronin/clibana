@@ -8,7 +8,7 @@ import (
 )
 
 type SearchConfig struct {
-	Fields fieldList `arg:"-o,env:CLIBANA_FIELDS" help:"Comma-separated list of fields to output"`
+	Fields fieldList `arg:"-F,env:CLIBANA_FIELDS" help:"List of fields to output. Optionally, the field output color can be set" placeholder:"FIELD_NAME[:COLOR],..."`
 	Follow bool      `arg:"-f" help:"Enable live tailing of logs"`
 	Query  string    `arg:"positional" default:"*" help:"Query string"`
 	Start  string    `arg:"-s" default:"now-5m" help:"Start time"`
@@ -48,17 +48,33 @@ func (ClibanaConfig) Description() string {
 }
 
 func (ClibanaConfig) Epilogue() string {
-	return "For more information, see https://github.com/ivoronin/clibana"
+	return strings.Join(
+		[]string{
+			"Supported color names:",
+			"black, red, green, yellow, blue, magenta, cyan, white",
+			"hiblack, hired, higreen, hiyellow, hiblue, himagenta, hicyan, hiwhite",
+			"",
+			"For more information, see https://github.com/ivoronin/clibana",
+		}, "\n")
 }
 
 func (ClibanaConfig) Version() string {
 	return fmt.Sprintf("clibana %s (commit: %s, build date: %s)", version, commit, date)
 }
 
-type fieldList []string
+type fieldListItem struct {
+	Name  string
+	Color string
+}
+
+type fieldList []fieldListItem
 
 func (c *fieldList) UnmarshalText(text []byte) error { //nolint:unparam
-	*c = strings.Split(string(text), ",")
+	parts := strings.Split(string(text), ",")
+	for _, part := range parts {
+		name, color, _ := strings.Cut(part, ":")
+		*c = append(*c, fieldListItem{Name: name, Color: color})
+	}
 
 	return nil
 }
