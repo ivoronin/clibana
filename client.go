@@ -38,7 +38,7 @@ func createClient(clibanaConfig ClibanaConfig) (*opensearch.Client, error) {
 
 func buildBasicAuthClientConfig(config ClibanaConfig) opensearch.Config {
 	if config.Username == "" || config.Password == "" {
-		FatalError(fmt.Errorf("uusername and password must be provided for basic authentication"))
+		FatalError(fmt.Errorf("username and password must be provided for basic authentication"))
 	}
 
 	return opensearch.Config{

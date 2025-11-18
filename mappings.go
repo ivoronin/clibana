@@ -42,7 +42,7 @@ func mappings(client *opensearch.Client, clibanaConfig ClibanaConfig) {
 		return keys[i].Name < keys[j].Name
 	})
 
-	writer := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
+	writer := tabwriter.NewWriter(os.Stdout, 0, 8, 2, '\t', 0)
 
 	if !clibanaConfig.Mappings.Quiet {
 		writer.Write([]byte("field\ttype\n"))

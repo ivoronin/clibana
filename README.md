@@ -28,5 +28,40 @@ Most options can be set using environment variables. Check `clibana -h` for addi
 
 ### AWS Support
 
-1. Clibana supports the `aws://` scheme to specify an AWS Managed OpenSearch Domain name, which will automatically resolve to its endpoint. Example: `clibana -u aws://logs-internal`.
-2. When using the `aws://` scheme, AWS authentication is enabled by default. You can override this by providing username and password for basic authentication: `clibana -u aws://logs-internal -U user -p pass`.
+1. Clibana supports the `aws://` scheme to specify an AWS Managed OpenSearch Domain name, which will automatically resolve to its endpoint:
+   ```bash
+   clibana -u aws://logs-internal -i "logs-*" search "error"
+   ```
+
+2. When using the `aws://` scheme, AWS authentication is enabled by default. You can override this by providing username and password file for basic authentication:
+   ```bash
+   echo 'mypassword' > ~/.clibana-password
+   chmod 600 ~/.clibana-password
+   clibana -u aws://logs-internal -i "logs-*" -U user --password-file ~/.clibana-password search "error"
+   ```
+
+### Authentication
+
+For basic authentication, use a password file (recommended for security):
+
+```bash
+# Create password file
+echo 'your-password' > ~/.clibana-password
+chmod 600 ~/.clibana-password
+
+# Use with clibana (always specify -u and -i)
+clibana -u https://logs.internal -i "logs-*" -U admin --password-file ~/.clibana-password search "error"
+```
+
+### Environment Variables
+
+Environment variables can be used to avoid repeating options:
+
+```bash
+export CLIBANA_URL="https://logs.internal"
+export CLIBANA_INDEX="pods-*"
+
+# Now you can omit -u and -i flags
+clibana search "error"
+clibana search -f "level:ERROR"
+```
