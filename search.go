@@ -1,18 +1,35 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 
 	"github.com/fatih/color"
 	"github.com/opensearch-project/opensearch-go/v2"
 )
 
 func search(client *opensearch.Client, clibanaConfig ClibanaConfig) {
-	tailer := NewTailer(client, clibanaConfig)
+	// Создаем контекст с обработкой сигналов для graceful shutdown
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
-	for hit := range tailer.Tail() {
+	// Обрабатываем Ctrl+C для остановки
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-sigChan
+		cancel()
+	}()
+
+	tailer := NewTailer(client, clibanaConfig)
+	hitChan := tailer.StartProducer(ctx)
+
+	for hit := range hitChan {
 		var output string
 
 		if clibanaConfig.Search.Fields != nil {

@@ -24,7 +24,7 @@ func buildClientConfig(clibanaConfig ClibanaConfig) opensearch.Config {
 		FatalError(fmt.Errorf("unsupported authentication type: %s", clibanaConfig.AuthType))
 	}
 
-	opensearchConfig.Addresses = []string{clibanaConfig.Host}
+	opensearchConfig.Addresses = []string{clibanaConfig.URL}
 	opensearchConfig.Transport = &http.Transport{
 		ResponseHeaderTimeout: ResponseTimeout * time.Second,
 	}
@@ -33,11 +33,6 @@ func buildClientConfig(clibanaConfig ClibanaConfig) opensearch.Config {
 }
 
 func createClient(clibanaConfig ClibanaConfig) (*opensearch.Client, error) {
-	if strings.HasPrefix(clibanaConfig.Host, "aws://") {
-		domainName := strings.TrimPrefix(clibanaConfig.Host, "aws://")
-		clibanaConfig.Host = resolveAWSDomainEndpoint(domainName)
-	}
-
 	return opensearch.NewClient(buildClientConfig(clibanaConfig))
 }
 

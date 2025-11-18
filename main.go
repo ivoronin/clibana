@@ -5,14 +5,17 @@ import (
 	"io"
 	"log"
 	"os"
+	"time"
 )
 
 const (
-	TailSleep         = 5
+	MinPollInterval   = 0
+	MaxPollInterval   = 5 * time.Second
 	ResponseTimeout   = 10
 	AuthTypeAWS       = "aws"
 	AuthTypeBasic     = "basic"
 	SearchRequestSize = 10000
+	HitChannelBuffer  = 30000
 )
 
 var (

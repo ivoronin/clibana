@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -24,22 +25,36 @@ type SearchResponse struct {
 }
 
 type Tailer struct {
-	Client        *opensearch.Client
-	ClibanaConfig ClibanaConfig
-	SearchAfter   []interface{}
+	Client              *opensearch.Client
+	ClibanaConfig       ClibanaConfig
+	SearchAfter         []interface{}
+	currentPollInterval time.Duration
 }
 
 func NewTailer(client *opensearch.Client, clibanaConfig ClibanaConfig) *Tailer {
 	return &Tailer{
-		Client:        client,
-		ClibanaConfig: clibanaConfig,
+		Client:              client,
+		ClibanaConfig:       clibanaConfig,
+		currentPollInterval: MinPollInterval,
 	}
 }
 
-func (t *Tailer) Tail() func(func(SearchResponseHitsHit) bool) {
-	size := SearchRequestSize
-	return func(yield func(SearchResponseHitsHit) bool) {
+func (t *Tailer) StartProducer(ctx context.Context) <-chan SearchResponseHitsHit {
+	hitChan := make(chan SearchResponseHitsHit, HitChannelBuffer)
+
+	go func() {
+		defer close(hitChan)
+
+		size := SearchRequestSize
+
 		for {
+			// Проверяем не отменён ли контекст
+			select {
+			case <-ctx.Done():
+				return
+			default:
+			}
+
 			requestBody := t.buildSearchRequestBody()
 			request := opensearchapi.SearchRequest{
 				Index: []string{t.ClibanaConfig.Index},
@@ -52,20 +67,43 @@ func (t *Tailer) Tail() func(func(SearchResponseHitsHit) bool) {
 
 			for _, hit := range response.Hits.Hits {
 				t.SearchAfter = hit.Sort
-				if !yield(hit) {
-					break
+				select {
+				case hitChan <- hit:
+				case <-ctx.Done():
+					return
 				}
 			}
 
-			if len(response.Hits.Hits) != size {
+			hitsReceived := len(response.Hits.Hits)
+
+			if hitsReceived == size {
+				// Получили полный batch - продолжаем без задержки
+				t.currentPollInterval = MinPollInterval
+			} else {
 				if t.ClibanaConfig.Search.Follow {
-					time.Sleep(TailSleep * time.Second)
+					// Вычисляем задержку по плавной формуле: sleep = max * (1 - ratio)⁴
+					// Это даёт почти нулевую задержку при 8k-10k событиях, плавно увеличивая до max при малом количестве
+					ratio := float64(hitsReceived) / float64(size)
+					deficit := 1.0 - ratio
+					// Возводим в 4-ю степень для крутой кривой
+					sleepFactor := deficit * deficit * deficit * deficit
+					t.currentPollInterval = time.Duration(float64(MaxPollInterval) * sleepFactor)
+
+					// Спим с возможностью прерывания по контексту
+					select {
+					case <-time.After(t.currentPollInterval):
+					case <-ctx.Done():
+						return
+					}
 				} else {
-					break
+					// Single-shot режим - выходим когда получили неполный batch
+					return
 				}
 			}
 		}
-	}
+	}()
+
+	return hitChan
 }
 
 func (t *Tailer) buildSearchRequestBody() *strings.Reader {

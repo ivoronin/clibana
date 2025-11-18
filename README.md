@@ -19,14 +19,14 @@ Clibana is a command-line interface (CLI) tool for OpenSearch that offers Kibana
 ## Examples
 
 ```bash
-clibana -H https://logs.internal -i "pods-*" search -s now-2h -e now-1h "pod_name:*nginx*"
-clibana -H https://logs.internal -i "pods-*" mappings
-clibana -H https://logs.internal -i "pods-*" indices
+clibana -u https://logs.internal -i "pods-*" search -s now-2h -e now-1h "pod_name:*nginx*"
+clibana -u https://logs.internal -i "pods-*" mappings
+clibana -u https://logs.internal -i "pods-*" indices
 ```
 
 Most options can be set using environment variables. Check `clibana -h` for additional details.
 
 ### AWS Support
 
-1. Clibana supports the `aws://` scheme to specify an AWS Managed OpenSearch Domain name as a host, which will automatically resolve to its endpoint. Example: `clibana --host aws://logs-internal`.
-2. You can use your AWS credentials to authenticate to an AWS Managed OpenSearch Domain. Set the authentication type to `aws`: `clibana -a aws`.
+1. Clibana supports the `aws://` scheme to specify an AWS Managed OpenSearch Domain name, which will automatically resolve to its endpoint. Example: `clibana -u aws://logs-internal`.
+2. When using the `aws://` scheme, AWS authentication is enabled by default. You can override this by providing username and password for basic authentication: `clibana -u aws://logs-internal -U user -p pass`.

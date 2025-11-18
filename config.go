@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"net/url"
 	"strings"
 
 	"github.com/alexflint/go-arg"
@@ -24,10 +25,10 @@ type IndicesConfig struct {
 }
 
 type ClibanaConfig struct {
-	Host     string          `arg:"-H,required,env:CLIBANA_HOST" help:"http[s]://host[:port] or aws://cluster-name"`
+	URL      string          `arg:"-u,required,env:CLIBANA_URL" help:"http[s]://host[:port] or aws://cluster-name"`
 	Index    string          `arg:"-i,required,env:CLIBANA_INDEX" help:"Index pattern"`
-	AuthType string          `arg:"-a,env:CLIBANA_AUTH" default:"basic" help:"Authentication type: aws or basic"`
-	Username string          `arg:"-u,env:CLIBANA_USER" help:"Username for basic authentication"`
+	AuthType string          `arg:"-a,env:CLIBANA_AUTH" help:"Authentication type: aws or basic"`
+	Username string          `arg:"-U,env:CLIBANA_USER" help:"Username for basic authentication"`
 	Password string          `arg:"-p,env:CLIBANA_PASSWORD" help:"Password for basic authentication"`
 	Debug    bool            `arg:"-d,env:CLIBANA_DEBUG" help:"Enable debug output"`
 	Search   *SearchConfig   `arg:"subcommand:search" help:"Search indices matching the index pattern"`
@@ -39,6 +40,27 @@ func NewClibanaConfig() ClibanaConfig {
 	var clibanaConfig ClibanaConfig
 
 	arg.MustParse(&clibanaConfig)
+
+	// Парсим URL для определения схемы
+	parsedURL, err := url.Parse(clibanaConfig.URL)
+	if err != nil {
+		FatalError(fmt.Errorf("failed to parse URL: %w", err))
+	}
+
+	// Резолвим AWS URL в настоящий HTTPS endpoint
+	if parsedURL.Scheme == "aws" {
+		clibanaConfig.URL = resolveAWSDomainEndpoint(parsedURL.Host)
+	}
+
+	// Автоматически выбираем тип авторизации если он не задан явно
+	if clibanaConfig.AuthType == "" {
+		// Используем AWS auth только если была схема aws:// и не заданы username/password
+		if parsedURL.Scheme == "aws" && clibanaConfig.Username == "" && clibanaConfig.Password == "" {
+			clibanaConfig.AuthType = AuthTypeAWS
+		} else {
+			clibanaConfig.AuthType = AuthTypeBasic
+		}
+	}
 
 	return clibanaConfig
 }
