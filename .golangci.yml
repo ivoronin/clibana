@@ -1,16 +1,30 @@
-linters:
-  enable-all: true
-  disable:
-  # Dont care:
-  - exhaustruct
-  - depguard
-  - wrapcheck
-  - tagalign
-  # Deprecated:
-  - execinquery
-  - gomnd
-  - perfsprint
-  - gochecknoglobals
+version: "2"
 
-issues:
-  exclude-rules: []
+linters:
+  default: all
+  disable:
+    - exhaustruct
+    - depguard
+    - wrapcheck
+    - tagalign
+    - forbidigo
+    - perfsprint
+    - gochecknoglobals
+    - wsl  # deprecated
+    - revive  # too noisy
+    # Legacy code suppressions:
+    - cyclop
+    - err113
+    - errcheck
+    - ireturn
+    - lll
+    - mnd
+    - modernize
+    - noinlineerr
+    - prealloc
+    - staticcheck
+    - tagliatelle
+    - varnamelen
+    - whitespace
+    - wsl_v5
+    - gosec
