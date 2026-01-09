@@ -4,10 +4,9 @@ go 1.23
 
 require (
 	github.com/alexflint/go-arg v1.5.1
-	github.com/aws/aws-sdk-go-v2 v1.30.3
+	github.com/aws/aws-sdk-go-v2 v1.41.0
 	github.com/aws/aws-sdk-go-v2/config v1.27.27
 	github.com/aws/aws-sdk-go-v2/service/opensearch v1.39.2
-	github.com/fatih/color v1.17.0
 	github.com/opensearch-project/opensearch-go/v2 v2.3.0
 )
 
@@ -23,8 +22,5 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sso v1.22.4 // indirect
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.26.4 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sts v1.30.3 // indirect
-	github.com/aws/smithy-go v1.20.3 // indirect
-	github.com/mattn/go-colorable v0.1.13 // indirect
-	github.com/mattn/go-isatty v0.0.20 // indirect
-	golang.org/x/sys v0.18.0 // indirect
+	github.com/aws/smithy-go v1.24.0 // indirect
 )
