@@ -34,10 +34,10 @@ Clibana queries OpenSearch indices using Lucene query syntax and streams results
 
 Download from [Releases](https://github.com/ivoronin/clibana/releases).
 
-### Go Install
+### Homebrew
 
 ```bash
-go install github.com/ivoronin/clibana/cmd/clibana@latest
+brew install ivoronin/ivoronin/clibana
 ```
 
 ## Usage
