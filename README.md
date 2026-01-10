@@ -1,67 +1,158 @@
-# Clibana
-![GitHub release (with filter)](https://img.shields.io/github/v/release/ivoronin/clibana)
-[![Go Report Card](https://goreportcard.com/badge/github.com/ivoronin/clibana)](https://goreportcard.com/report/github.com/ivoronin/clibana)
-![GitHub last commit (branch)](https://img.shields.io/github/last-commit/ivoronin/clibana/main)
-![GitHub Workflow Status (with event)](https://img.shields.io/github/actions/workflow/status/ivoronin/clibana/main.yml)
-![GitHub top language](https://img.shields.io/github/languages/top/ivoronin/clibana)
+# clibana
 
-## Description
+CLI log tailer for OpenSearch with Lucene query syntax and live streaming
 
-Clibana is a command-line interface (CLI) tool for OpenSearch that offers Kibana-like log searching and live tailing (`-f` support) capabilities.
+[![CI](https://github.com/ivoronin/clibana/actions/workflows/test.yml/badge.svg)](https://github.com/ivoronin/clibana/actions/workflows/test.yml)
+[![Release](https://img.shields.io/github/v/release/ivoronin/clibana)](https://github.com/ivoronin/clibana/releases)
+
+[Overview](#overview) · [Features](#features) · [Installation](#installation) · [Usage](#usage) · [Configuration](#configuration) · [Requirements](#requirements) · [License](#license)
+
+```bash
+# Search logs from the last 2 hours
+clibana -u https://logs.internal -i "pods-*" search -s now-2h "level:ERROR"
+
+# Live tail with field selection
+clibana -u https://logs.internal -i "pods-*" search -f -F "@timestamp,message" "pod_name:nginx*"
+```
+
+## Overview
+
+Clibana queries OpenSearch indices using Lucene query syntax and streams results to stdout. In follow mode (`-f`), it continuously polls for new documents, similar to `tail -f`. Supports AWS Managed OpenSearch with automatic domain endpoint resolution via the `aws://` scheme and SigV4 authentication.
 
 ## Features
 
-- **Log Search**: Execute searches on multiple OpenSearch indices using Lucene query syntax. Clibana can output specified fields or export data in NDJSON format.
-- **Live Tailing**: Monitor logs in real-time using the `-f` option, similar to `tail -f`.
-- **Cluster Exploration**: List index information and field mappings.
-- **AWS and Basic Authentication**: Supports both AWS SigV4 and Basic Authentication methods.
+- Lucene query syntax with field-specific searches, wildcards, phrases, and boolean operators
+- Live tailing mode (`-f`) with adaptive polling (0-5 second intervals based on event rate)
+- Field selection for custom output format, or NDJSON for full document output
+- AWS Managed OpenSearch support with automatic domain endpoint resolution
+- AWS SigV4 and HTTP Basic authentication
+- Index exploration commands: list indices and field mappings
 
-## Examples
+## Installation
+
+### GitHub Releases
+
+Download from [Releases](https://github.com/ivoronin/clibana/releases).
+
+### Homebrew
 
 ```bash
-clibana -u https://logs.internal -i "pods-*" search -s now-2h -e now-1h "pod_name:*nginx*"
-clibana -u https://logs.internal -i "pods-*" mappings
+brew install ivoronin/ivoronin/clibana
+```
+
+## Usage
+
+### Search
+
+```bash
+# Search all logs from the last 5 minutes (default)
+clibana -u https://logs.internal -i "logs-*" search "*"
+
+# Search with time range
+clibana -u https://logs.internal -i "logs-*" search -s now-2h -e now-1h "level:ERROR"
+
+# Live tail mode
+clibana -u https://logs.internal -i "logs-*" search -f "pod_name:web-*"
+
+# Select specific fields (space-separated output)
+clibana -u https://logs.internal -i "logs-*" search -F "@timestamp,level,message" "error"
+```
+
+### Query Syntax
+
+```bash
+*                               # Match all logs
+error                           # Search in all fields
+level:ERROR                     # Field-specific search
+pod_name:nginx*                 # Wildcard search
+message:"out of memory"         # Phrase search
+level:ERROR AND pod:web-*       # Boolean AND
+level:ERROR AND NOT pod:test-*  # Boolean AND NOT
+```
+
+### Time Formats
+
+```bash
+-s now-5m                    # Last 5 minutes (default)
+-s now-2h -e now-1h          # 1-2 hours ago
+-s 2024-01-15T10:00:00Z      # Absolute timestamp
+```
+
+### Cluster Exploration
+
+```bash
+# List indices matching pattern
 clibana -u https://logs.internal -i "pods-*" indices
+
+# Show field mappings
+clibana -u https://logs.internal -i "pods-*" mappings
+
+# Quiet mode (no headers)
+clibana -u https://logs.internal -i "pods-*" indices -q
+clibana -u https://logs.internal -i "pods-*" mappings -q
 ```
 
-Most options can be set using environment variables. Check `clibana -h` for additional details.
-
-### AWS Support
-
-1. Clibana supports the `aws://` scheme to specify an AWS Managed OpenSearch Domain name, which will automatically resolve to its endpoint:
-   ```bash
-   clibana -u aws://logs-internal -i "logs-*" search "error"
-   ```
-
-2. When using the `aws://` scheme, AWS authentication is enabled by default. You can override this by providing username and password file for basic authentication:
-   ```bash
-   echo 'mypassword' > ~/.clibana-password
-   chmod 600 ~/.clibana-password
-   clibana -u aws://logs-internal -i "logs-*" -U user --password-file ~/.clibana-password search "error"
-   ```
-
-### Authentication
-
-For basic authentication, use a password file (recommended for security):
+### AWS Managed OpenSearch
 
 ```bash
-# Create password file
-echo 'your-password' > ~/.clibana-password
-chmod 600 ~/.clibana-password
+# Use aws:// scheme to resolve domain name to endpoint
+clibana -u aws://logs-internal -i "logs-*" search "error"
 
-# Use with clibana (always specify -u and -i)
-clibana -u https://logs.internal -i "logs-*" -U admin --password-file ~/.clibana-password search "error"
+# Override AWS auth with basic auth
+clibana -u aws://logs-internal -i "logs-*" -U admin --password-file ~/.clibana-password search "error"
 ```
+
+## Configuration
 
 ### Environment Variables
 
-Environment variables can be used to avoid repeating options:
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `CLIBANA_URL` | OpenSearch URL (`https://host:port` or `aws://domain-name`) | - |
+| `CLIBANA_INDEX` | Index pattern | - |
+| `CLIBANA_AUTH` | Authentication type (`aws` or `basic`) | auto-detected |
+| `CLIBANA_USER` | Username for basic authentication | - |
+| `CLIBANA_FIELDS` | Comma-separated list of fields to output | - |
+| `CLIBANA_DEBUG` | Enable debug output | `false` |
+
+### Authentication
+
+**Basic Authentication:**
 
 ```bash
-export CLIBANA_URL="https://logs.internal"
-export CLIBANA_INDEX="pods-*"
-
-# Now you can omit -u and -i flags
-clibana search "error"
-clibana search -f "level:ERROR"
+echo 'your-password' > ~/.clibana-password
+chmod 600 ~/.clibana-password
+clibana -u https://logs.internal -i "logs-*" -U admin --password-file ~/.clibana-password search "error"
 ```
+
+**AWS Authentication:**
+
+AWS credentials are loaded from the default credential chain (environment variables, shared credentials file, IAM role).
+
+## Requirements
+
+### AWS Managed OpenSearch
+
+When using the `aws://` scheme, the following IAM permissions are required:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": ["es:DescribeDomain"],
+      "Resource": "arn:aws:es:*:*:domain/*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["es:ESHttpGet", "es:ESHttpPost"],
+      "Resource": "arn:aws:es:*:*:domain/*/_search"
+    }
+  ]
+}
+```
+
+## License
+
+[GPL-3.0](LICENSE)
