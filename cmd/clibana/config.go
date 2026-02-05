@@ -28,9 +28,10 @@ type IndicesConfig struct {
 type ClibanaConfig struct {
 	URL          string          `arg:"-u,required,env:CLIBANA_URL" help:"http[s]://host[:port] or aws://cluster-name"`
 	Index        string          `arg:"-i,required,env:CLIBANA_INDEX" help:"Index pattern"`
-	AuthType     string          `arg:"-a,env:CLIBANA_AUTH" help:"Authentication type: aws or basic"`
+	AuthType     string          `arg:"-a,env:CLIBANA_AUTH" help:"Authentication type: aws, basic, or cookie"`
 	Username     string          `arg:"-U,env:CLIBANA_USER" help:"Username for basic authentication"`
 	PasswordFile string          `arg:"--password-file" help:"Path to file containing password for basic authentication"`
+	CookieFile   string          `arg:"-C,--cookie-file,env:CLIBANA_COOKIE_FILE" help:"Path to Netscape cookie file for SAML auth"`
 	Password     string          `arg:"-"`
 	Debug        bool            `arg:"-d,env:CLIBANA_DEBUG" help:"Enable debug output"`
 	Search       *SearchConfig   `arg:"subcommand:search" help:"Search indices matching the index pattern"`
@@ -65,10 +66,12 @@ func NewClibanaConfig() ClibanaConfig {
 
 	// Автоматически выбираем тип авторизации если он не задан явно
 	if clibanaConfig.AuthType == "" {
-		// Используем AWS auth только если была схема aws:// и не заданы username/password
-		if parsedURL.Scheme == "aws" && clibanaConfig.Username == "" && clibanaConfig.Password == "" {
+		switch {
+		case clibanaConfig.CookieFile != "":
+			clibanaConfig.AuthType = AuthTypeCookie
+		case parsedURL.Scheme == "aws" && clibanaConfig.Username == "" && clibanaConfig.Password == "":
 			clibanaConfig.AuthType = AuthTypeAWS
-		} else {
+		default:
 			clibanaConfig.AuthType = AuthTypeBasic
 		}
 	}
