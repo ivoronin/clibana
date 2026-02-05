@@ -28,9 +28,11 @@ type IndicesConfig struct {
 type ClibanaConfig struct {
 	URL          string          `arg:"-u,required,env:CLIBANA_URL" help:"http[s]://host[:port] or aws://cluster-name"`
 	Index        string          `arg:"-i,required,env:CLIBANA_INDEX" help:"Index pattern"`
-	AuthType     string          `arg:"-a,env:CLIBANA_AUTH" help:"Authentication type: aws or basic"`
+	AuthType     string          `arg:"-a,env:CLIBANA_AUTH" help:"Authentication type: aws, basic, or cookie"`
 	Username     string          `arg:"-U,env:CLIBANA_USER" help:"Username for basic authentication"`
 	PasswordFile string          `arg:"--password-file" help:"Path to file containing password for basic authentication"`
+	CookieFile   string          `arg:"-C,--cookie-file,env:CLIBANA_COOKIE_FILE" help:"Path to Netscape cookie file for cookie-based auth via dashboard proxy"`
+	ServerType   string          `arg:"-S,--server-type,env:CLIBANA_SERVER_TYPE" help:"Server type: opensearch or elasticsearch (auto-detected if not set)"`
 	Password     string          `arg:"-"`
 	Debug        bool            `arg:"-d,env:CLIBANA_DEBUG" help:"Enable debug output"`
 	Search       *SearchConfig   `arg:"subcommand:search" help:"Search indices matching the index pattern"`
@@ -63,12 +65,28 @@ func NewClibanaConfig() ClibanaConfig {
 		clibanaConfig.URL = resolveAWSDomainEndpoint(parsedURL.Host)
 	}
 
+	// Normalize URL: strip /_dashboards path if user copied it from browser
+	parsedURL, err = url.Parse(clibanaConfig.URL)
+	if err != nil {
+		FatalError(fmt.Errorf("failed to parse URL: %w", err))
+	}
+	if parsedURL.Path == "/_dashboards" || parsedURL.Path == "/_dashboards/" {
+		parsedURL.Path = ""
+		clibanaConfig.URL = parsedURL.String()
+		// Also set server type if not explicitly configured
+		if clibanaConfig.ServerType == "" {
+			clibanaConfig.ServerType = ServerTypeOpenSearch
+		}
+	}
+
 	// Автоматически выбираем тип авторизации если он не задан явно
 	if clibanaConfig.AuthType == "" {
-		// Используем AWS auth только если была схема aws:// и не заданы username/password
-		if parsedURL.Scheme == "aws" && clibanaConfig.Username == "" && clibanaConfig.Password == "" {
+		switch {
+		case clibanaConfig.CookieFile != "":
+			clibanaConfig.AuthType = AuthTypeCookie
+		case parsedURL.Scheme == "aws" && clibanaConfig.Username == "" && clibanaConfig.Password == "":
 			clibanaConfig.AuthType = AuthTypeAWS
-		} else {
+		default:
 			clibanaConfig.AuthType = AuthTypeBasic
 		}
 	}

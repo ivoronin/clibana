@@ -14,8 +14,11 @@ const (
 	ResponseTimeout   = 10
 	AuthTypeAWS       = "aws"
 	AuthTypeBasic     = "basic"
+	AuthTypeCookie    = "cookie"
 	SearchRequestSize = 10000
 	HitChannelBuffer  = 30000
+	ServerTypeOpenSearch     = "opensearch"
+	ServerTypeElasticSearch = "elasticsearch"
 )
 
 var (

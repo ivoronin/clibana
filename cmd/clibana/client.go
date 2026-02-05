@@ -15,19 +15,24 @@ import (
 func buildClientConfig(clibanaConfig ClibanaConfig) opensearch.Config {
 	var opensearchConfig opensearch.Config
 
+	baseTransport := &http.Transport{
+		ResponseHeaderTimeout: ResponseTimeout * time.Second,
+	}
+
 	switch strings.ToLower(clibanaConfig.AuthType) {
 	case AuthTypeAWS:
 		opensearchConfig = buildAWSAuthClientConfig()
+		opensearchConfig.Transport = baseTransport
 	case AuthTypeBasic:
 		opensearchConfig = buildBasicAuthClientConfig(clibanaConfig)
+		opensearchConfig.Transport = baseTransport
+	case AuthTypeCookie:
+		opensearchConfig = buildCookieAuthClientConfig(clibanaConfig, baseTransport)
 	default:
 		FatalError(fmt.Errorf("unsupported authentication type: %s", clibanaConfig.AuthType))
 	}
 
 	opensearchConfig.Addresses = []string{clibanaConfig.URL}
-	opensearchConfig.Transport = &http.Transport{
-		ResponseHeaderTimeout: ResponseTimeout * time.Second,
-	}
 
 	return opensearchConfig
 }
