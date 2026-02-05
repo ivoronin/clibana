@@ -22,8 +22,11 @@ type dashboardProxyTransport struct {
 }
 
 func (t *dashboardProxyTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-	// Extract original path (strip leading slash for proxy path param)
+	// Extract original path and query string (strip leading slash for proxy path param)
 	origPath := strings.TrimPrefix(req.URL.Path, "/")
+	if req.URL.RawQuery != "" {
+		origPath += "?" + req.URL.RawQuery
+	}
 	origMethod := req.Method
 
 	// Build console proxy URL
