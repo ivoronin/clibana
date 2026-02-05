@@ -41,6 +41,7 @@ func (t *dashboardProxyTransport) RoundTrip(req *http.Request) (*http.Response, 
 	proxyReq := req.Clone(req.Context())
 	proxyReq.URL = proxyURL
 	proxyReq.Host = proxyURL.Host
+	proxyReq.Method = http.MethodPost // Console proxy requires POST
 
 	// Add required header for dashboard API
 	proxyReq.Header.Set("osd-xsrf", "true")
