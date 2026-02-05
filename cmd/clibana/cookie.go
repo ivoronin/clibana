@@ -14,11 +14,12 @@ import (
 )
 
 // dashboardProxyTransport wraps an http.RoundTripper to route requests through
-// the OpenSearch Dashboards console proxy, adding required headers and cookies.
+// the OpenSearch Dashboards or Kibana (ElasticSearch) console proxy, adding required headers and cookies.
 type dashboardProxyTransport struct {
-	base    http.RoundTripper
-	cookies []*http.Cookie
-	baseURL string
+	base       http.RoundTripper
+	cookies    []*http.Cookie
+	baseURL    string
+	serverType string
 }
 
 func (t *dashboardProxyTransport) RoundTrip(req *http.Request) (*http.Response, error) {
@@ -29,12 +30,22 @@ func (t *dashboardProxyTransport) RoundTrip(req *http.Request) (*http.Response, 
 	}
 	origMethod := req.Method
 
+	// Determine proxy path and XSRF header based on server type
+	var proxyPath, xsrfHeader string
+	if t.serverType == ServerTypeElasticSearch {
+		proxyPath = "/api/console/proxy"
+		xsrfHeader = "kbn-xsrf"
+	} else {
+		proxyPath = "/_dashboards/api/console/proxy"
+		xsrfHeader = "osd-xsrf"
+	}
+
 	// Build console proxy URL
 	proxyURL, err := url.Parse(t.baseURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse base URL: %w", err)
 	}
-	proxyURL.Path = "/_dashboards/api/console/proxy"
+	proxyURL.Path = proxyPath
 	proxyURL.RawQuery = url.Values{
 		"path":   {origPath},
 		"method": {origMethod},
@@ -46,21 +57,21 @@ func (t *dashboardProxyTransport) RoundTrip(req *http.Request) (*http.Response, 
 	proxyReq.Host = proxyURL.Host
 	proxyReq.Method = http.MethodPost // Console proxy requires POST
 
-	// Add required header for dashboard API
-	proxyReq.Header.Set("osd-xsrf", "true")
+	// Add required XSRF header for dashboard API
+	proxyReq.Header.Set(xsrfHeader, "true")
 
 	// Add cookies
 	for _, cookie := range t.cookies {
 		proxyReq.AddCookie(cookie)
 	}
 
-	DebugLogger.Printf("Proxy request: %s %s", proxyReq.Method, proxyReq.URL.String())
+	DebugLogger.Printf("Proxy request: %s %s (server type: %s)", proxyReq.Method, proxyReq.URL.String(), t.serverType)
 
 	return t.base.RoundTrip(proxyReq)
 }
 
 // parseCookieFile parses a Netscape/curl format cookie file.
-// Format: domain<TAB>flag<TAB>path<TAB>secure<TAB>expiry<TAB>name<TAB>value
+// Format: domain<TAB>flag<TAB>path<TAB>secure<TAB>expiry<TAB>name<TAB>value.
 func parseCookieFile(path string) ([]*http.Cookie, error) {
 	f, err := os.Open(path)
 	if err != nil {
@@ -101,6 +112,20 @@ func parseCookieFile(path string) ([]*http.Cookie, error) {
 	return cookies, nil
 }
 
+// detectServerTypeFromCookies detects the server type based on cookie paths.
+// OpenSearch Dashboards uses "/_dashboards" path, while Kibana (ElasticSearch) uses "/".
+func detectServerTypeFromCookies(cookies []*http.Cookie) string {
+	for _, c := range cookies {
+		if c.Name == "security_authentication" || strings.HasPrefix(c.Name, "security_authentication") {
+			if strings.HasPrefix(c.Path, "/_dashboards") {
+				return ServerTypeOpenSearch
+			}
+		}
+	}
+
+	return ServerTypeElasticSearch
+}
+
 func buildCookieAuthClientConfig(config ClibanaConfig, baseTransport http.RoundTripper) opensearch.Config {
 	cookies, err := parseCookieFile(config.CookieFile)
 	if err != nil {
@@ -109,10 +134,20 @@ func buildCookieAuthClientConfig(config ClibanaConfig, baseTransport http.RoundT
 
 	DebugLogger.Printf("Loaded %d cookies from %s", len(cookies), config.CookieFile)
 
+	// Determine server type: use explicit config or auto-detect from cookies
+	serverType := config.ServerType
+	if serverType == "" {
+		serverType = detectServerTypeFromCookies(cookies)
+		DebugLogger.Printf("Auto-detected server type: %s", serverType)
+	} else {
+		DebugLogger.Printf("Using configured server type: %s", serverType)
+	}
+
 	proxyTransport := &dashboardProxyTransport{
-		base:    baseTransport,
-		cookies: cookies,
-		baseURL: config.URL,
+		base:       baseTransport,
+		cookies:    cookies,
+		baseURL:    config.URL,
+		serverType: serverType,
 	}
 
 	return opensearch.Config{

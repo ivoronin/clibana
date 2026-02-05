@@ -31,8 +31,8 @@ type ClibanaConfig struct {
 	AuthType     string          `arg:"-a,env:CLIBANA_AUTH" help:"Authentication type: aws, basic, or cookie"`
 	Username     string          `arg:"-U,env:CLIBANA_USER" help:"Username for basic authentication"`
 	PasswordFile string          `arg:"--password-file" help:"Path to file containing password for basic authentication"`
-	CookieFile   string          `arg:"-C,--cookie-file,env:CLIBANA_COOKIE_FILE" help:"Path to Netscape cookie file for SAML auth"`
-	ServerType   string          `arg:"-S,--server-type,env:CLIBANA_SERVER_TYPE" help:"Server type: opensearch or kibana (auto-detected if not set)"`
+	CookieFile   string          `arg:"-C,--cookie-file,env:CLIBANA_COOKIE_FILE" help:"Path to Netscape cookie file for cookie-based auth via dashboard proxy"`
+	ServerType   string          `arg:"-S,--server-type,env:CLIBANA_SERVER_TYPE" help:"Server type: opensearch or elasticsearch (auto-detected if not set)"`
 	Password     string          `arg:"-"`
 	Debug        bool            `arg:"-d,env:CLIBANA_DEBUG" help:"Enable debug output"`
 	Search       *SearchConfig   `arg:"subcommand:search" help:"Search indices matching the index pattern"`
