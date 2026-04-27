@@ -6,7 +6,7 @@ require (
 	github.com/alexflint/go-arg v1.6.1
 	github.com/aws/aws-sdk-go-v2 v1.41.6
 	github.com/aws/aws-sdk-go-v2/config v1.32.16
-	github.com/aws/aws-sdk-go-v2/service/opensearch v1.64.1
+	github.com/aws/aws-sdk-go-v2/service/opensearch v1.66.0
 	github.com/opensearch-project/opensearch-go/v2 v2.3.0
 )
 
