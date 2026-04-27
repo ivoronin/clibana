@@ -29,8 +29,8 @@ github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding v1.13.8/go.mod h1:
 github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.9.27/go.mod h1:EOwBD4J4S5qYszS5/3DpkejfuK+Z5/1uzICfPaZLtqw=
 github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.13.22 h1:PUmZeJU6Y1Lbvt9WFuJ0ugUK2xn6hIWUBBbKuOWF30s=
 github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.13.22/go.mod h1:nO6egFBoAaoXze24a2C0NjQCvdpk8OueRoYimvEB9jo=
-github.com/aws/aws-sdk-go-v2/service/opensearch v1.64.1 h1:WQQt7JCRiP4Q9W8Abp8PcYMZ+gLDvzJZnRjEAhl5F/0=
-github.com/aws/aws-sdk-go-v2/service/opensearch v1.64.1/go.mod h1:Vl2mkiFwxo+XTJ5VKSfhmlpiYCQFC93c6NB/EhV5lfA=
+github.com/aws/aws-sdk-go-v2/service/opensearch v1.66.0 h1:aBPbUvfgXI9M05r8y5vxaceF17LbL0orIWDz6l/LpU4=
+github.com/aws/aws-sdk-go-v2/service/opensearch v1.66.0/go.mod h1:Vl2mkiFwxo+XTJ5VKSfhmlpiYCQFC93c6NB/EhV5lfA=
 github.com/aws/aws-sdk-go-v2/service/signin v1.0.10 h1:a1Fq/KXn75wSzoJaPQTgZO0wHGqE9mjFnylnqEPTchA=
 github.com/aws/aws-sdk-go-v2/service/signin v1.0.10/go.mod h1:p6+MXNxW7IA6dMgHfTAzljuwSKD0NCm/4lbS4t6+7vI=
 github.com/aws/aws-sdk-go-v2/service/sso v1.12.10/go.mod h1:ouy2P4z6sJN70fR3ka3wD3Ro3KezSxU6eKGQI2+2fjI=
